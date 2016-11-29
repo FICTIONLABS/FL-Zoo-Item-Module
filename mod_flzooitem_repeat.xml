@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+    <fieldset name="section1" label="Условие для поиска">
+        <field name="element_id"
+            label="Элемент"
+            description="Элемент для фильтра"
+            size="30"
+            type="flzooelements" />
+        <field name="element_compare"
+            label="Сравнение"
+            description="Тип сравнения"
+            type="list">
+            <option value="=">EQUAL</option>
+            <option value="ltgt">NOT EQUAL</option>
+            <option value="gt">GREATER THAN</option>
+            <option value="lt">LESS THAN</option>
+            <option value="gt=">GREATER THAN OR EQUAL</option>
+            <option value="lt=">LESS THAN OR EQUAL</option>
+            <option value="LIKE">LIKE</option>
+        </field>
+        <field name="element_value"
+            label="Значение"
+            description="Значение для сравнения"
+            size="30"
+            type="text" />
+        <field name="element_mode"
+            label="Режим сравнения"
+            description="Режим сравнения значений"
+            default="mode_s"
+            type="list">
+            <option value="mode_s">Как строки и числа</option>
+            <option value="mode_d">Как даты</option>
+        </field>
+    </fieldset>
+</form>
