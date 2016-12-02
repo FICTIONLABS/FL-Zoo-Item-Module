@@ -20,23 +20,20 @@ class modFlZooItemHelper extends AppHelper
         parent::__construct($app);
     }
 
-    // Get Item
+    // Get Items
 
     public function getItems() {
 
+        // set vars
+
         $join_search    = $join_category = $join_tag = '';
-        $tags           = array('{NOW}, {BIRTHDAY}');
         $result         = $element = $value = $compare = $mode = $query_where = $query_where_extra = array();
         $apps           = $this->params->get('applications', array());
         $types          = $this->params->get('types', array());
         $limit          = $this->params->get('count', 1);
         $condition      = $this->params->get('elements_condition');
-        // $order          = $this->params->get('order');
 
-        // $elements = $this->groupByKey(json_decode($this->params->get('elements'), true));
         $elements = $this->params->get('elements');
-
-        // $order = $this->getItemOrder($order);
 
         $db = JFactory::getDbo();
         
@@ -47,51 +44,60 @@ class modFlZooItemHelper extends AppHelper
 
             $row->element_compare = str_replace(array('lt', 'gt'), array('<', '>'), $row->element_compare);
 
-            if ($row->element_mode == 'mode_d' && !in_array($row->element_value, $tags)) {
-                $row->element_value = JFactory::getDate($row->element_value)->toSQL(); // get date from value
+            if ($row->element_mode == 'mode_d') { // set date format
+                $row->element_value = JFactory::getDate($row->element_value)->toSQL();
             }
 
-            switch ($row->element_value) {
-                case '{BIRTHDAY}':
-                    $join_search = " LEFT JOIN ".ZOO_TABLE_SEARCH." AS b ON a.id = b.item_id";
-                    $query_where[] = "(b.element_id = ".$db->quote($row->element_id)." AND MONTH(b.value) = MONTH(CURDATE()) AND DAYOFMONTH(b.value) = DAYOFMONTH(CURDATE()))";
-                    break;
+            $value = strtolower($row->element_value);
 
-                case '{NOW}':
-                    $value = JFactory::getDate()->toSQL();
-                    $join_search = " LEFT JOIN ".ZOO_TABLE_SEARCH." AS b ON a.id = b.item_id";
-                    $query_where[] = "(b.element_id = ".$db->quote($row->element_id)." AND b.value ".$row->element_compare." ".$db->quote($value).")";
-                    break;
+            jbdump(JFactory::getApplication()->input);
 
-                default:
-                    $value = strtolower($row->element_value);
-                    if (strpos($row->element_id, '_') !== FALSE) {
-                        if ($row->element_id == '_itemtag') {
-                            $join_tag = " LEFT JOIN ".ZOO_TABLE_TAG." AS c ON a.id = c.item_id";
-                            $query_where[] = "c.name ".$row->element_compare." ".$db->quote($value)."";
-                        } elseif($row->element_id == '_itemcategory') {
-                            $join_category = " LEFT JOIN ".ZOO_TABLE_CATEGORY_ITEM." AS d ON a.id = d.item_id";
-                            $query_where[] = "d.category_id ".$row->element_compare." ".$db->quote($value)."";
-                        } else {
-                            $query_where[] = "a.".str_replace('_item', '', $row->element_id)." ".$row->element_compare." ".$db->quote($value);
-                        }
-                    } else {
-                        $join_search = " LEFT JOIN ".ZOO_TABLE_SEARCH." AS b ON a.id = b.item_id";
-                        $query_where[] = "(b.element_id = ".$db->quote($row->element_id)." AND b.value ".$row->element_compare." ".$db->quote($value).")";
+            if (strpos($row->element_id, '_') !== FALSE) { // core elements conditions
+
+                if ($row->element_id == '_itemtag') { // search from tag table
+
+                    $join_tag = " LEFT JOIN ".ZOO_TABLE_TAG." AS c ON a.id = c.item_id";
+                    $query_where[] = "c.name ".$row->element_compare." ".$db->quote($value)."";
+
+                } elseif($row->element_id == '_itemcategory') { // search from category table
+
+                    if ($row->element_value == '{CATEGORY_ID}') {
+                        $value = JFactory::getApplication()->input->get('category_id', 0);
                     }
-                    break;
-            }         
 
-            if($key != $lastElementKey) {
-                $query_where[] = " ".strtoupper($condition)." ";
+                    $join_category = " LEFT JOIN ".ZOO_TABLE_CATEGORY_ITEM." AS d ON a.id = d.item_id";
+                    $query_where[] = "d.category_id ".$row->element_compare." ".$db->quote($value)."";
+
+                } else { // search from item table
+
+                    if ($row->element_value == '{APPLICATION_ID}') {
+                        $value = JFactory::getApplication()->input->get('application_id', 0);
+                    }
+
+                    $query_where[] = "a.".str_replace('_item', '', $row->element_id)." ".$row->element_compare." ".$db->quote($value);
+
+                }
+            } else { // custom elements condition
+
+                if ($row->element_value == '{BIRTHDAY}') {
+                    $query_where[] = "(b.element_id = ".$db->quote($row->element_id)." AND MONTH(b.value) = MONTH(CURDATE()) AND DAYOFMONTH(b.value) = DAYOFMONTH(CURDATE()))";
+                }
+
+                if ($row->element_value == '{NOW}') {
+                    $value = JFactory::getDate()->toSQL();
+                }
+
+                $join_search    = " LEFT JOIN ".ZOO_TABLE_SEARCH." AS b ON a.id = b.item_id";
+                $query_where[]  = "(b.element_id = ".$db->quote($row->element_id)." AND b.value ".$row->element_compare." ".$db->quote($value).")";
+
             }
         }
 
-        if (!empty($apps)) {
+        if (!empty($apps)) { // apps conditions
             $query_where_extra[] = " AND a.application_id IN (".implode(',', $apps).")";
         }
 
-        if (!empty($types)) {
+        if (!empty($types)) { // types conditions
             $query_where_extra[] = " AND a.type IN (".implode(',', $db->quote($types)).")";
         }
 
@@ -103,10 +109,9 @@ class modFlZooItemHelper extends AppHelper
                 ." WHERE (%s)%s"
                 ." AND a.searchable=1"
                 ." GROUP BY a.id"
-                // .($order ? " ORDER BY " . $order : "")
                 ." LIMIT ".$limit;
 
-        $query = sprintf($query, implode('', $query_where), implode('', $query_where_extra));
+        $query = sprintf($query, implode(' '.$condition.' ', $query_where), implode('', $query_where_extra));
 
         $db->setQuery($query);
 
@@ -114,21 +119,6 @@ class modFlZooItemHelper extends AppHelper
 
         return $result;
     }
-
-    // Get Array Grouped By Key
-
-    // public function groupByKey($array) {
-    //     $result = array();
-
-    //     foreach ($array as $textKey => $sub) 
-    //     {
-    //         foreach ($sub as $k => $v) 
-    //         {
-    //             $result[$k][$textKey] = $v;
-    //         }
-    //     }
-    //     return $result;
-    // }
 
     // Get Item Order
 
@@ -197,6 +187,8 @@ class modFlZooItemHelper extends AppHelper
         return $result;
 
     }
+
+    // Get Item Objects
 
     public function getItemObjects($object) {
         $ids = array();
