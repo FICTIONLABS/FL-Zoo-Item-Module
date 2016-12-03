@@ -10,13 +10,13 @@
             label="Сравнение"
             description="Тип сравнения"
             type="list">
-            <option value="=">EQUAL</option>
-            <option value="ltgt">NOT EQUAL</option>
-            <option value="gt">GREATER THAN</option>
-            <option value="lt">LESS THAN</option>
-            <option value="gt=">GREATER THAN OR EQUAL</option>
-            <option value="lt=">LESS THAN OR EQUAL</option>
-            <option value="LIKE">LIKE</option>
+            <option value="=">РАВНО</option>
+            <option value="ltgt">НЕ РАВНО</option>
+            <option value="gt">БОЛЬШЕ</option>
+            <option value="lt">МЕНЬШЕ</option>
+            <option value="gt=">БОЛЬШЕ ИЛИ РАВНО</option>
+            <option value="lt=">МEНЬШЕ ИЛИ РАВНО</option>
+            <option value="LIKE">СОДЕРЖИТ</option>
         </field>
         <field name="element_value"
             label="Значение"

@@ -36,60 +36,58 @@ class modFlZooItemHelper extends AppHelper
         $elements = $this->params->get('elements');
 
         $db = JFactory::getDbo();
-        
-        $lastElement    = end($elements);
-        $lastElementKey = key($elements);
 
         foreach ($elements as $key => $row) {
 
-            $row->element_compare = str_replace(array('lt', 'gt'), array('<', '>'), $row->element_compare);
-
-            if ($row->element_mode == 'mode_d') { // set date format
-                $row->element_value = JFactory::getDate($row->element_value)->toSQL();
-            }
-
             $value = strtolower($row->element_value);
 
-            jbdump(JFactory::getApplication()->input);
+            if (!empty($value)) { // check empty element value
 
-            if (strpos($row->element_id, '_') !== FALSE) { // core elements conditions
+                if ($row->element_compare == 'LIKE') {
+                    $value = '%'.$value.'%';
+                }
 
-                if ($row->element_id == '_itemtag') { // search from tag table
+                $row->element_compare = str_replace(array('lt', 'gt'), array('<', '>'), $row->element_compare);
 
-                    $join_tag = " LEFT JOIN ".ZOO_TABLE_TAG." AS c ON a.id = c.item_id";
-                    $query_where[] = "c.name ".$row->element_compare." ".$db->quote($value)."";
+                if ($row->element_mode == 'mode_d') { // set date format
+                    $row->element_value = JFactory::getDate($row->element_value)->toSQL();
+                }
 
-                } elseif($row->element_id == '_itemcategory') { // search from category table
+                if (strpos($row->element_id, '_') !== FALSE) { // core elements conditions
 
-                    if ($row->element_value == '{CATEGORY_ID}') {
-                        $value = JFactory::getApplication()->input->get('category_id', 0);
+                    if ($row->element_id == '_itemtag') { // search from tag table
+
+                        $join_tag = " LEFT JOIN ".ZOO_TABLE_TAG." AS c ON a.id = c.item_id";
+                        $query_where[] = "c.name ".$row->element_compare." ".$db->quote($value)."";
+
+                    } elseif($row->element_id == '_itemcategory') { // search from category table
+
+                        if ($row->element_value == '{CATEGORY_ID}') {
+                            $value = JFactory::getApplication()->input->get('category_id', 0);
+                        }
+
+                        $join_category = " LEFT JOIN ".ZOO_TABLE_CATEGORY_ITEM." AS d ON a.id = d.item_id";
+                        $query_where[] = "d.category_id ".$row->element_compare." ".$db->quote($value)."";
+
+                    } else { // search from item table
+
+                        $query_where[] = "a.".str_replace('_item', '', $row->element_id)." ".$row->element_compare." ".$db->quote($value);
+
+                    }
+                } else { // custom elements condition
+
+                    if ($row->element_value == '{BIRTHDAY}') {
+                        $query_where[] = "(b.element_id = ".$db->quote($row->element_id)." AND MONTH(b.value) = MONTH(CURDATE()) AND DAYOFMONTH(b.value) = DAYOFMONTH(CURDATE()))";
                     }
 
-                    $join_category = " LEFT JOIN ".ZOO_TABLE_CATEGORY_ITEM." AS d ON a.id = d.item_id";
-                    $query_where[] = "d.category_id ".$row->element_compare." ".$db->quote($value)."";
-
-                } else { // search from item table
-
-                    if ($row->element_value == '{APPLICATION_ID}') {
-                        $value = JFactory::getApplication()->input->get('application_id', 0);
+                    if ($row->element_value == '{NOW}') {
+                        $value = JFactory::getDate()->toSQL();
                     }
 
-                    $query_where[] = "a.".str_replace('_item', '', $row->element_id)." ".$row->element_compare." ".$db->quote($value);
+                    $join_search    = " LEFT JOIN ".ZOO_TABLE_SEARCH." AS b ON a.id = b.item_id";
+                    $query_where[]  = "(b.element_id = ".$db->quote($row->element_id)." AND b.value ".$row->element_compare." ".$db->quote($value).")";
 
                 }
-            } else { // custom elements condition
-
-                if ($row->element_value == '{BIRTHDAY}') {
-                    $query_where[] = "(b.element_id = ".$db->quote($row->element_id)." AND MONTH(b.value) = MONTH(CURDATE()) AND DAYOFMONTH(b.value) = DAYOFMONTH(CURDATE()))";
-                }
-
-                if ($row->element_value == '{NOW}') {
-                    $value = JFactory::getDate()->toSQL();
-                }
-
-                $join_search    = " LEFT JOIN ".ZOO_TABLE_SEARCH." AS b ON a.id = b.item_id";
-                $query_where[]  = "(b.element_id = ".$db->quote($row->element_id)." AND b.value ".$row->element_compare." ".$db->quote($value).")";
-
             }
         }
 
