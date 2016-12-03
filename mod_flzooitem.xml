@@ -6,7 +6,9 @@
 	<authorEmail>info@fictionlabs.ru</authorEmail>
 	<authorUrl>http://fictionlabs.ru</authorUrl>
 	<version>1.0</version>
-	<description>FL Zoo Item module from FICTIONLABS.RU</description>
+	<description>
+		<![CDATA[com_folio_folios_view_default_desc]]>
+	</description>
 	<files>
 		<filename module="mod_flzooitem">mod_flzooitem.php</filename>
         <filename>helper.php</filename>
@@ -26,8 +28,8 @@
                     label="&lt;b style=font-size:20px&gt;Настройки внешнего вида&lt;/b&gt;&lt;hr/&gt;"
                     />
 				<field name="theme" type="filename" default="" label="Стиль" description="Стиль" path="/tmpl/" />
+				<field name="cols" type="text" default="" label="Количество столбцов" description="Количество столбцов для шаблона UIkit Grid" showon="theme:uikit_grid" />
 				<field name="layout" type="filename" default="" label="Шаблон" description="Шаблон" path="/renderer/item/" />
-                <field name="cols" type="text" default="" label="Количество столбцов" description="Количество столбцов для шаблона UIkit Grid" />
 				<field name="media_position" type="list" default="left" label="Расположение" description="Рсположение">
 					<option value="left">Left</option>
 					<option value="right">Right</option>

@@ -27,20 +27,15 @@ $items 	= array();
 $apps 	= $params->get('applications', array());
 $cols 	= $params->get('cols', 3);
 
-if (!empty($apps)) {
+// get helper
+$flZooItemHelper = new modFlZooItemHelper($zoo, $params);
 
-	// get helper
-	$flZooItemHelper = new modFlZooItemHelper($zoo, $params);
+// get items
+$items = $flZooItemHelper->getItems();
 
-	// jbdump($params->get('elements'));
+// set renderer
+$renderer = $zoo->renderer->create('item')->addPath(array($zoo->path->path('component.site:'), dirname(__FILE__)));
 
-	// get items
-	$items = $flZooItemHelper->getItems();
+$layout = $params->get('layout', 'default');
 
-	// set renderer
-	$renderer = $zoo->renderer->create('item')->addPath(array($zoo->path->path('component.site:'), dirname(__FILE__)));
-
-	$layout = $params->get('layout', 'default');
-
-	include(JModuleHelper::getLayoutPath('mod_flzooitem', $params->get('theme', 'list')));
-}
+include(JModuleHelper::getLayoutPath('mod_flzooitem', $params->get('theme', 'list')));

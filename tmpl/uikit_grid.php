@@ -12,7 +12,7 @@ defined('_JEXEC') or die('Restricted access');
 
 <?php if (!empty($items)) : ?>
 
-<ul class="uk-grid uk-grid-width-1-<?php echo $cols ?>">
+<ul class="uk-grid uk-grid-width-1-<?php echo $cols ?>" data-uk-grid-margin="" data-uk-grid-match="">
 	<?php $i = 0; foreach ($items as $item) : ?>
 	<li><?php echo $renderer->render('item.'.$layout, compact('item', 'params')); ?></li>
 	<?php $i++; endforeach; ?>
