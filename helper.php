@@ -32,8 +32,7 @@ class modFlZooItemHelper extends AppHelper
         $types          = $this->params->get('types', array());
         $limit          = $this->params->get('count', 1);
         $condition      = $this->params->get('elements_condition');
-
-        $elements = $this->params->get('elements');
+        $elements       = $this->params->get('elements');
 
         $db = JFactory::getDbo();
 
@@ -43,7 +42,7 @@ class modFlZooItemHelper extends AppHelper
 
             if (!empty($value)) { // check empty element value
 
-                if ($row->element_compare == 'LIKE') {
+                if ($row->element_compare == 'LIKE' || $row->element_compare == 'NOT LIKE') {
                     $value = '%'.$value.'%';
                 }
 
@@ -113,7 +112,9 @@ class modFlZooItemHelper extends AppHelper
 
         $db->setQuery($query);
 
-        $result = $this->getItemObjects($db->loadObjectList());
+        $resultIds = $db->loadColumn();
+
+        $result = $this->getZooItemsByIds($resultIds);
 
         return $result;
     }
@@ -184,18 +185,6 @@ class modFlZooItemHelper extends AppHelper
 
         return $result;
 
-    }
-
-    // Get Item Objects
-
-    public function getItemObjects($object) {
-        $ids = array();
-        if ($object) {
-            foreach ($object as $key => $item) {
-                $ids[] = $item->id;
-            }
-        }
-        return $this->getZooItemsByIds($ids);
     }
 
     // Get Zoo Items By Ids

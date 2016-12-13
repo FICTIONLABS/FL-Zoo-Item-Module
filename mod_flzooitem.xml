@@ -111,10 +111,10 @@
                 <field name="elements_condition"
                             label="Логика поиска"
                             description="Режим объединения условий элементов И/ИЛИ. Все элементы в опции выше будут объединены по условию И или ИЛИ."
-                            default="or"
+                            default="and"
                             type="list">
-                            <option value="or">OR</option>
-                            <option value="and">AND</option>
+                            <option value="or">ИЛИ</option>
+                            <option value="and">И</option>
                         </field>
                 <field name="order" type="flzooitemorder" label="Сортировка" description="Сортировка материалов" random="true" />
 

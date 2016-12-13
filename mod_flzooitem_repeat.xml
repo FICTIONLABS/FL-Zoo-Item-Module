@@ -17,6 +17,7 @@
             <option value="gt=">БОЛЬШЕ ИЛИ РАВНО</option>
             <option value="lt=">МEНЬШЕ ИЛИ РАВНО</option>
             <option value="LIKE">СОДЕРЖИТ</option>
+            <option value="NOT LIKE">НЕ СОДЕРЖИТ</option>
         </field>
         <field name="element_value"
             label="Значение"
