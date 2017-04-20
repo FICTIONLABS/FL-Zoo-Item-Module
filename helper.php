@@ -40,7 +40,7 @@ class modFlZooItemHelper extends AppHelper
 
             $value = strtolower($row->element_value);
 
-            if (!empty($value)) { // check empty element value
+            if ($value != '') { // check empty element value
 
                 if ($row->element_compare == 'LIKE' || $row->element_compare == 'NOT LIKE') {
                     $value = '%'.$value.'%';
@@ -98,23 +98,20 @@ class modFlZooItemHelper extends AppHelper
             $query_where_extra[] = " AND a.type IN (".implode(',', $db->quote($types)).")";
         }
 
-        $query = "SELECT a.id"
-                ." FROM ".ZOO_TABLE_ITEM." AS a"
-                .$join_search
-                .$join_category
-                .$join_tag
-                ." WHERE (%s)%s"
-                ." AND a.searchable=1"
-                ." GROUP BY a.id"
-                ." LIMIT ".$limit;
+        // get item ordering
+        $orderby = $this->params->get('order');
+        list($joinOrder, $order) = $this->getItemOrder($orderby, $ignore_order_priority);
 
-        $query = sprintf($query, implode(' '.$condition.' ', $query_where), implode('', $query_where_extra));
+        // query
+        $select     = "DISTINCT a.*";
+        $from       = ZOO_TABLE_ITEM." AS a"
+                    .$join_search
+                    .$join_category
+                    .$join_tag
+                    .($joinOrder ? $joinOrder : "");
+        $conditions = implode(' '.$condition.' ', $query_where).implode('', $query_where_extra);
 
-        $db->setQuery($query);
-
-        $resultIds = $db->loadColumn();
-
-        $result = $this->getZooItemsByIds($resultIds);
+        $result = $this->app->table->item->all(compact('select', 'from', 'conditions', 'order', 'limit'));
 
         return $result;
     }
@@ -122,13 +119,15 @@ class modFlZooItemHelper extends AppHelper
     // Get Item Order
 
     protected function getItemOrder($order, $ignore_order_priority = false) {
-
         $result = array();
 
         if (in_array('_ignore_priority', $order)) {
             $ignore_order_priority = true;
             unset($order['_ignore_priority']);
         }
+
+        // trigger order event
+        $this->app->event->dispatcher->notify($this->app->event->create($order, 'item:changeorder'));
 
         // remove empty and duplicate values
         $order = array_unique(array_filter($order));
@@ -170,41 +169,34 @@ class modFlZooItemHelper extends AppHelper
             if (strpos($element, '_item') === 0) {
                 $var = str_replace('_item', '', $element);
                 if ($alphanumeric) {
-                    $result = $reversed == 'ASC' ? "$var+0<>0 DESC, $var+0, $var" : "$var+0<>0, $var+0 DESC, $var DESC";
+                    $result[1] = $reversed == 'ASC' ? "a.$var+0<>0 DESC, a.$var+0, a.$var" : "a.$var+0<>0, a.$var+0 DESC, a.$var DESC";
                 } else {
-                    $result = $reversed == 'ASC' ? "$var" : "$var DESC";
+                    $result[1] = $reversed == 'ASC' ? "a.$var" : "a.$var DESC";
                 }
 
             }
         }
 
+        // else order by elements
+        if (!isset($result[1])) {
+            $result[0] = " LEFT JOIN ".ZOO_TABLE_SEARCH." AS s ON a.id = s.item_id AND s.element_id IN ('".implode("', '", $order)."')";
+            if ($alphanumeric) {
+                $result[1] = $reversed == 'ASC' ? "ISNULL(s.value), s.value+0<>0 DESC, s.value+0, s.value" : "s.value+0<>0, s.value+0 DESC, s.value DESC";
+            } else {
+                $result[1] = $reversed == 'ASC' ? "s.value" : "s.value DESC";
+            }
+        }
+
         // If there wasn't _ignore_priority in the order array, prefix priority
         if (!$ignore_order_priority) {
-            $result = $result ? 'priority DESC, ' . $result : 'priority DESC';
+            $result[1] = $result[1] ? 'a.priority DESC, ' . $result[1] : 'a.priority DESC';
         }
+
+        // trigger init event
+        $this->app->event->dispatcher->notify($this->app->event->create($order, 'item:orderquery', array('result' => &$result)));
 
         return $result;
 
-    }
-
-    // Get Zoo Items By Ids
-
-    public function getZooItemsByIds($ids) {
-        $ids = array_filter($ids);
-        if (empty($ids)) {
-            return array();
-        }
-
-        $conditions = array(
-            'id IN (' . implode(',', $ids) . ')',
-        );
-
-        $order = $this->params->get('order');
-        $order = $this->getItemOrder($order);
-
-        $result = $this->app->table->item->all(compact('conditions', 'order'));
-
-        return $result;
     }
 
 }
